@@ -423,7 +423,7 @@ callsuffix:		normcall { $$ = $1; }
 normcall:		LEFT_PARENTHESIS elist RIGHT_PARENTHESIS {
 				$$ = (fcall_t*)malloc(sizeof(struct functionCall));
 				$$->elist = (expr*)malloc(sizeof(struct Expression));
-				$$->elist = $2;
+				$$->elist = reverse_elist($2);
 				$$->method = 0;
 				$$->name = NULL;
 				}

@@ -142,6 +142,7 @@ unsigned int newlist(unsigned int i);
 unsigned int mergelist(unsigned int l1, unsigned int l2);
 void patchlist(int list, int label);
 void initList(struct stack **current, bool *exists);
+expr *reverse_elist(expr *elist);
 
 extern quad *quads;
 extern unsigned total;

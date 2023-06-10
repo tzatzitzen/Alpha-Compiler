@@ -42,6 +42,8 @@ void consume_block_comment(int line);
 %option yylineno
 %option noyywrap
 
+%x COMMENT
+
 
 IF          "if"
 ELSE        "else"
@@ -100,9 +102,13 @@ LINE_COMMENT      "//".*
 NEW_LINE        "\n"
 SPACE           " "
 TAB             "\t"
+CR "\r"
 
 
 %%
+
+
+
 {IF}        {yylval.lex_token = NULL; /* set_token(yylineno,tokenCount,yytext,KEYWORD,"IF","enumerated"); */    return IF;}
 {ELSE}      {yylval.lex_token = NULL; /* set_token(yylineno,tokenCount,yytext,KEYWORD,"ELSE","enumerated"); */ return ELSE;}
 {WHILE}     {yylval.lex_token = NULL; /* set_token(yylineno,tokenCount,yytext,KEYWORD,"WHILE","enumerated"); */    return WHILE;}
@@ -199,8 +205,14 @@ TAB             "\t"
 {SPACE}
 {TAB}
 {LINE_COMMENT}          {/*printf("%d: #%d \"\" COMMENT LINE_COMMENT <-enumerated\n",yylineno, tokenCount++); */ }
-"/*"                    {consume_block_comment(yylineno);}
+
+"/*"                  { BEGIN(COMMENT); }
+<COMMENT>"*/"         { BEGIN(INITIAL); }
+<COMMENT>.|\n         {}
+
+{CR}
 .                       {fprintf(stderr,"Cannot match character '%s' in line %d with any rule\n",yytext,yylineno); exit(1); }
+
 %%
 
 

@@ -204,6 +204,7 @@ static void avm_init_stack() {
 
 char *avm_to_string(memcell *m) {
   assert(m->type >= 0 && m->type <= undef_m);
+  // printf("type: %d", m->type);
   return (*to_stringFunc[m->type])(m);
 }
 
@@ -247,7 +248,8 @@ table *avm_table_new() {
 }
 
 void memclear_string(memcell *str) {
-  assert(str->data.table_val);
+  // printf("GOTIN_MEMCLEAR_STRING\n");
+  assert(str->data.str_val);
   free(str->data.str_val);
 }
 
@@ -264,41 +266,67 @@ void avm_memcell_clear(memcell *cell) {
     memclear_func_t func = memclear_funcs[cell->type];
     if (func) {
       (*func)(cell);
+      cell->type = undef_m;
     }
-    cell->type = undef_m;
   }
 }
 
+void print_stack(unsigned range) {
+  printf("\n\n===============================");
+  for (unsigned i = AVM_STACK_SIZE - 1; i >= AVM_STACK_SIZE - range; i--) {
+    memcell *tmp = &avm_stack[i];
+    printf("pos: %d val:%f\n", i, tmp->data.num_val);
+  }
+  printf("===============================\n\n");
+}
+
 memcell *avm_translate(avmarg *arg, memcell *reg) {
+
+  // print_stack(10);
   // printf("type: %d\n", arg->type);
+
   switch (arg->type) {
-  case global_a:
+  case global_a: {
+    // printf("Global:\n");
+    // printf("\n\n");
+    // printf("returgning pos %d\n", AVM_STACK_SIZE - 1 - arg->val);
     return &avm_stack[AVM_STACK_SIZE - 1 - arg->val];
+  }
   case local_a:
+    // printf("local:\n");
     return &avm_stack[topsp - arg->val];
   case formal_a:
+    // printf("formal:\n");
     return &avm_stack[topsp + AVM_STACK_ENV_SIZE + 1 + arg->val];
   case retval_a:
+    // printf("ret:\n");
     return &retval;
   case number_a:
+    // printf("number:\n");
     reg->type = number_m;
     reg->data.num_val = const_get_number(arg->val);
     return reg;
   case string_a:
+    // printf("string:\n");
     reg->type = string_m;
     reg->data.str_val = const_get_string(arg->val);
+    return reg;
   case bool_a:
+    // printf("bool:\n");
     reg->type = bool_m;
     reg->data.bool_val = arg->val;
     return reg;
   case nil_a:
+    // printf("nil:\n");
     reg->type = nil_m;
     return reg;
   case userfunc_a:
+    // printf("user:\n");
     reg->type = userfunc_m;
     reg->data.userfunc_val = arg->val;
     return reg;
   case libfunc_a:
+    // printf("lib:\n");
     reg->type = libfunc_m;
     reg->data.libfunc_val = libfuncs_get_used(arg->val);
     return reg;
@@ -320,7 +348,7 @@ void avm_assign(memcell *lv, memcell *rv) {
   }
 
   avm_memcell_clear(lv);
-  memcpy(lv, rv, sizeof(memcell));
+  memcpy(lv, rv, sizeof(struct avm_memcell));
 
   if (lv->type == string_m) {
     lv->data.str_val = strdup(rv->data.str_val);
@@ -329,13 +357,17 @@ void avm_assign(memcell *lv, memcell *rv) {
   }
 }
 
+unsigned count = 0;
 void execute_assign(instr *in) {
+  // printf("\n---------GOTIN_ASSING: %d---------\n", ++count);
   memcell *lv = avm_translate(&in->result, (memcell *)0);
   memcell *rv = avm_translate(&in->arg1, &ax);
   // printf("lv address: %p\n", (void *)lv);
   assert(lv && (&avm_stack[AVM_STACK_SIZE - 1] >= lv && lv > &avm_stack[top]) ||
          lv == &retval);
   avm_assign(lv, rv);
+  // printf("After Assign: \n");
+  // print_stack(10);
 }
 
 void execute_add(instr *in);
@@ -514,6 +546,7 @@ void avm_dec_top() {
 
 void avm_push_env_value(unsigned val) {
   // printf("GOTINENVVALUE\n\n");
+  // printf("Pushing: %d\n", val);
   avm_stack[top].type = number_m;
   avm_stack[top].data.num_val = val;
   avm_dec_top();
@@ -553,16 +586,29 @@ unsigned avm_total_actuals() {
 
 memcell *avm_get_actual(unsigned pos) {
   assert(pos < avm_total_actuals());
-  return &avm_stack[topsp + AVM_STACK_ENV_SIZE + 1 + pos];
+  memcell *tmp = &avm_stack[topsp + AVM_STACK_ENV_SIZE + 1 + pos];
+  // printf("Getting value %f from the stack\n", tmp->data.num_val);
+  return tmp;
 }
 
 void libfunc_print() {
-  unsigned n = avm_total_actuals();
-  for (int i = 0; i < n; i++) {
-    char *s = avm_to_string(avm_get_actual(i));
-    // printf("GOTIN_PRINT\n\n");
-    puts(s);
-    free(s);
+  unsigned int total = avm_total_actuals();
+
+  for (unsigned int i = 0; i < total; ++i) {
+    char *str = avm_to_string(avm_get_actual(i));
+
+    if (str) {
+      for (int j = 0; str[j] != '\0'; ++j) {
+        if (str[j] == '\\' && str[j + 1] == 'n') {
+          printf("\n");
+          j++;
+        } else {
+          printf("%c", str[j]);
+        }
+      }
+    } else {
+      printf("NULL\n");
+    }
   }
 }
 
@@ -963,8 +1009,12 @@ else if (!strcmp("argument", id))
 
 void execute_pusharg(instr *in) {
   // printf("GOTINEXE_PUSHARG\n\n");
+  // printf("Arg value: %d\n", in->result.val);
   memcell *arg = avm_translate(&in->result, &ax);
   assert(arg);
+
+  // printf("Arg value: %f\n", arg->data.num_val);
+  // printf("Arg type: %d\n", arg->type);
 
   avm_assign(&avm_stack[top], arg);
   ++total_actuals;
@@ -1041,5 +1091,6 @@ int main() {
     // printf("top address: %p\n", (void *)(&avm_stack[top]));
     execute_cycle();
   }
+  printf("\n");
   return 0;
 }

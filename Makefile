@@ -24,3 +24,10 @@ test:
 	gcc -g -o avm decoder.c vm.c -lm
 	./compiler test.txt
 	./avm
+val:
+	flex --outfile=lex.c lex.l
+	bison --yacc --defines --output=parser.c parser.y
+	gcc -g -o compiler lex.c parser.c symtable.c intermediate.c target.c 
+	gcc -g -o avm decoder.c vm.c -lm
+	./compiler test.txt
+	valgrind ./avm

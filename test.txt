@@ -1,22 +1,24 @@
-//while(a) {
-//	a = f(a);
-//	if(a) {
-//	break;
-//	} else { 
-//		break;
-//		continue;
-//	}
-//	continue;
-//	break;
-//	break;}
-//x = 10;
-//function f(x, y) {return x + y;}
-//z = "world";
-//w = cos(3.1415);
-//printf(x,y,z,w);
-//print(x,y,z,w);
-//while(x>7) { x--;}
+/*
+    Test file for the final phase of HY-340: Languages & Compilers
+    Computer science dpt, University of Crete, Greece
 
-y = "hello";
-x = 5 + 3;
-print(x, 5, y, 3 ,x);
+    Expected Output:
+	3.000 6.000 9.000 54.000
+	18.000 9.000
+	54.000 54.000 54.000 54.000
+	0.000 0.000
+	-9.000
+	20.000
+	16.500
+	0.000
+	3.000 6.000 6.000 9.000 0.000
+*/
+
+
+c = "hello";
+b = "mom";
+nl = " ";
+i = 4;
+while(i-- > 0){
+print(c, nl, b);
+}

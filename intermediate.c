@@ -57,6 +57,7 @@ Entry_T newtemp() {
                        curr_scope == 0 ? ST_GLOBAL : ST_LOCAL, currScopespace(),
                        currScopespaceOffset());
     sym = ScopeLookup(name, curr_scope);
+    inCurrScopespaceOffset();
   }
   return sym;
 }
@@ -363,6 +364,21 @@ void initList(struct stack **current, bool *exists) {
   // starting from 0, cause -1 doesnt work with break/continue labels
   (*current)->top = 0;
   *exists = true;
+}
+
+expr *reverse_elist(expr *elist) {
+  expr *prev = NULL, *current = NULL, *next = NULL;
+  current = elist;
+  while (current != NULL) {
+    next = malloc(sizeof(expr));
+    *next = *current;
+
+    next->next = prev;
+    prev = next;
+
+    current = current->next;
+  }
+  return prev;
 }
 
 void push(struct stack *x, unsigned int y) {
