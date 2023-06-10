@@ -1,0 +1,22 @@
+//while(a) {
+//	a = f(a);
+//	if(a) {
+//	break;
+//	} else { 
+//		break;
+//		continue;
+//	}
+//	continue;
+//	break;
+//	break;}
+//x = 10;
+//function f(x, y) {return x + y;}
+//z = "world";
+//w = cos(3.1415);
+//printf(x,y,z,w);
+//print(x,y,z,w);
+//while(x>7) { x--;}
+
+y = "hello";
+x = 5 + 3;
+print(x, 5, y, 3 ,x);
