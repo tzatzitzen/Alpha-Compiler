@@ -125,13 +125,15 @@ struct avm_table {
   unsigned total;
 };
 
+typedef enum compare { eq, neq, lt, le, gt, ge } cmp;
+
 typedef void (*memclear_func_t)(memcell *);
 typedef void (*execute_func_t)(instr *);
 typedef char *(*tostring_func_t)(memcell *);
 typedef void (*library_func_t)(void);
 typedef double (*arithmetic_func_t)(double x, double y);
 typedef unsigned char (*to_bool_func_t)(memcell *);
-typedef unsigned char (*eq_check_dispatch_t)(memcell *, memcell *);
+typedef unsigned char (*eq_check_dispatch_t)(memcell *, memcell *, cmp c);
 
 void decodeBinaryFile();
 

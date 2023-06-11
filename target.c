@@ -103,7 +103,7 @@ unsigned insert_libraryFunction(const char *func) {
 unsigned insert_userFunction(Entry_T sym) {
   for (int i = 0; i < currUserFunctions; i++) {
     if (strcmp(sym->name, userFunctions[i].name) == 0 &&
-        sym->isfunction->label == userFunctions[i].address) {
+        sym->isfunction->taddress == userFunctions[i].address) {
       return i;
     }
   }
@@ -113,7 +113,7 @@ unsigned insert_userFunction(Entry_T sym) {
   unsigned pos = currUserFunctions;
   userfunc *u = userFunctions + currUserFunctions++;
   u->name = sym->name;
-  u->address = sym->isfunction->label;
+  u->address = sym->isfunction->taddress;
   u->localSize = sym->isfunction->locals;
   return pos;
 }
@@ -567,7 +567,6 @@ void serialize(unsigned int globals) {
   fwrite(&magicnumber, sizeof(unsigned), 1, f);
 
   fwrite(&currConstStrings, sizeof(unsigned), 1, f);
-  printf("string size: %d\n", currConstStrings);
   for (unsigned i = 0; i < currConstStrings; i++) {
     unsigned size = strlen(constStrings[i]) + 1;
 
@@ -576,14 +575,11 @@ void serialize(unsigned int globals) {
   }
 
   fwrite(&currConstNumbers, sizeof(unsigned), 1, f);
-  printf("num size: %d\n", currConstNumbers);
   for (unsigned i = 0; i < currConstNumbers; i++) {
-    printf("writing: %f\n", constNumbers[i]);
     fwrite(&constNumbers[i], sizeof(double), 1, f);
   }
 
   fwrite(&currUserFunctions, sizeof(unsigned), 1, f);
-  printf("user size: %d\n", currUserFunctions);
   for (unsigned i = 0; i < currUserFunctions; i++) {
     userfunc curr = userFunctions[i];
     fwrite(&(curr.address), sizeof(unsigned), 1, f);
@@ -599,7 +595,6 @@ void serialize(unsigned int globals) {
     unsigned size = strlen(libraryFunctions[i]) + 1;
 
     fwrite(&size, sizeof(unsigned), 1, f);
-    printf("size: %d\n", size);
     fwrite(libraryFunctions[i], sizeof(char), size, f);
   }
 

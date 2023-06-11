@@ -14,11 +14,7 @@
 	3.000 6.000 6.000 9.000 0.000
 */
 
-
-c = "hello";
-b = "mom";
-nl = " ";
-i = 4;
-while(i-- > 0){
-print(c, nl, b);
-}
+x = 5;
+b = "DENANTEXOALLO";
+function g(c) {print(b, "\n", "\n");}
+g(1);

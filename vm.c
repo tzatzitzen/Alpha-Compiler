@@ -87,11 +87,26 @@ unsigned char avm_tobool(memcell *m) {
   return (*to_boolFuncs[m->type])(m);
 }
 
-unsigned char check_numbers(memcell *rv1, memcell *rv2) {
-  return rv1->data.num_val == rv2->data.num_val;
+unsigned char check_numbers(memcell *rv1, memcell *rv2, cmp c) {
+  switch (c) {
+  case eq:
+    return rv1->data.num_val == rv2->data.num_val;
+  case neq:
+    return rv1->data.num_val != rv2->data.num_val;
+  case lt:
+    return rv1->data.num_val < rv2->data.num_val;
+  case le:
+    return rv1->data.num_val <= rv2->data.num_val;
+  case gt:
+    return rv1->data.num_val > rv2->data.num_val;
+  case ge:
+    return rv1->data.num_val >= rv2->data.num_val;
+  default:
+    assert(0);
+  }
 }
 
-unsigned char check_strings(memcell *rv1, memcell *rv2) {
+unsigned char check_strings(memcell *rv1, memcell *rv2, cmp c) {
   return !strcmp(rv1->data.str_val, rv2->data.str_val);
 }
 
@@ -135,7 +150,7 @@ memcell *avm_table_getelem(table *tbl, memcell *index) {
   bucket **bucket_list = get_bucket(tbl, index, &hash);
   bucket *current = bucket_list[hash];
   while (current) {
-    if ((*checkDispatch)(&current->value, index)) {
+    if ((*checkDispatch)(&current->value, index, eq)) {
       return &current->value;
     }
     current = current->next;
@@ -154,7 +169,7 @@ void avm_table_setelem(memcell *tbl, memcell *index, memcell *content) {
   bucket **bucket_list = get_bucket(tbl->data.table_val, index, &hash);
   bucket *current = bucket_list[hash];
   while (current) {
-    if ((*checkDispatch)(&current->value, index)) {
+    if ((*checkDispatch)(&current->value, index, eq)) {
       avm_memcell_clear(&current->value);
       current->value = *content;
 
@@ -271,11 +286,17 @@ void avm_memcell_clear(memcell *cell) {
   }
 }
 
+void print_cell(unsigned pos) {
+
+  memcell *tmp = &avm_stack[pos];
+  // printf("address: %p pos: %d val:%f\n", (void *)&avm_stack[pos],
+  // pos,tmp->data.num_val);
+}
+
 void print_stack(unsigned range) {
-  printf("\n\n===============================");
+  printf("\n\n===============================\n");
   for (unsigned i = AVM_STACK_SIZE - 1; i >= AVM_STACK_SIZE - range; i--) {
-    memcell *tmp = &avm_stack[i];
-    printf("pos: %d val:%f\n", i, tmp->data.num_val);
+    print_cell(i);
   }
   printf("===============================\n\n");
 }
@@ -288,18 +309,20 @@ memcell *avm_translate(avmarg *arg, memcell *reg) {
   switch (arg->type) {
   case global_a: {
     // printf("Global:\n");
-    // printf("\n\n");
-    // printf("returgning pos %d\n", AVM_STACK_SIZE - 1 - arg->val);
+    //  printf("\n\n");
+    // print_cell(AVM_STACK_SIZE - 1 - arg->val);
     return &avm_stack[AVM_STACK_SIZE - 1 - arg->val];
   }
   case local_a:
     // printf("local:\n");
+    //  print_cell(topsp - arg->val);
+    print_cell(topsp - arg->val);
     return &avm_stack[topsp - arg->val];
   case formal_a:
     // printf("formal:\n");
     return &avm_stack[topsp + AVM_STACK_ENV_SIZE + 1 + arg->val];
   case retval_a:
-    // printf("ret:\n");
+    // printf("ret\n");
     return &retval;
   case number_a:
     // printf("number:\n");
@@ -357,17 +380,26 @@ void avm_assign(memcell *lv, memcell *rv) {
   }
 }
 
+void print_pointers(memcell *lv) {
+  printf("lv = %p\n", (void *)lv);
+  printf("&avm_stack[top] = %p\n", (void *)&avm_stack[top]);
+  printf("&avm_stack[AVM_STACK_SIZE - 1] = %p\n",
+         (void *)&avm_stack[AVM_STACK_SIZE - 1]);
+  printf("&retval = %p\n", (void *)&retval);
+}
+
 unsigned count = 0;
 void execute_assign(instr *in) {
-  // printf("\n---------GOTIN_ASSING: %d---------\n", ++count);
+  // printf("Before Assign:\n");
+  //  printf("\n---------GOTIN_ASSING: %d---------\n", ++count);
   memcell *lv = avm_translate(&in->result, (memcell *)0);
   memcell *rv = avm_translate(&in->arg1, &ax);
-  // printf("lv address: %p\n", (void *)lv);
+  // print_pointers(lv);
   assert(lv && (&avm_stack[AVM_STACK_SIZE - 1] >= lv && lv > &avm_stack[top]) ||
          lv == &retval);
   avm_assign(lv, rv);
   // printf("After Assign: \n");
-  // print_stack(10);
+  //  print_stack(10);
 }
 
 void execute_add(instr *in);
@@ -394,8 +426,10 @@ void execute_call(instr *in) {
   switch (func->type) {
   case userfunc_m:
     avm_call_save_env();
-    pc = func->data.userfunc_val;
+    pc = user_func_array[func->data.userfunc_val].address;
+    // printf("func name: %s\n", user_func_array[func->data.userfunc_val].name);
     assert(pc < AVM_ENDING_PC);
+    // printf("pc: %d, opcode: %d\n\n", pc, code[pc].opcode);
     assert(code[pc].opcode == funcenter_v);
     break;
   case string_m:
@@ -474,7 +508,7 @@ void execute_tablesetelem(instr *in) {
 void execute_funcenter(instr *in) {
   memcell *func = avm_translate(&in->result, &ax);
   assert(func);
-  assert(pc == func->data.userfunc_val);
+  assert(pc == user_func_array[func->data.userfunc_val].address);
   inFunc++;
   total_actuals = 0;
   userfunc *func_info = avm_get_funcinfo(pc);
@@ -490,6 +524,7 @@ unsigned avm_get_env_value(unsigned pos) {
 }
 
 void execute_funcexit(instr *in) {
+  // printf("GOTIN_FUNCEXIT\n\n");
   unsigned old_top = top;
   top = avm_get_env_value(topsp + AVM_SAVED_TOP_OFFSET);
   pc = avm_get_env_value(topsp + AVM_SAVED_PC_OFFSET);
@@ -680,9 +715,10 @@ void execute_jeq(instr *in) {
             typeStrings[rv2->type]);
     avm_error(error);
   } else {
-    result = (*checkDispatch[rv1->type])(rv1, rv2);
+    result = (*checkDispatch[rv1->type])(rv1, rv2, eq);
   }
   if (!execution_finished && result) {
+    printf("==JEQ: %d\n\n", in->result.val);
     pc = in->result.val;
   }
 }
@@ -696,7 +732,7 @@ void execute_jne(instr *in) {
   unsigned char result = 0;
 
   if (rv1->type == undef_m || rv2->type == undef_m)
-    avm_error("'undef' not in equality");
+    avm_error("'undef' involved in equality");
   else if (rv1->type == nil_m || rv2->type == nil_m)
     result = (rv1->type == nil_m || rv2->type == nil_m);
   else if (rv1->type == bool_m || rv2->type == bool_m)
@@ -745,7 +781,7 @@ void execute_jge(instr *instr) {
 
 void execute_jlt(instr *instr) {
   assert(instr->result.type == label_a);
-  memcell *rv1 = avm_translate(&instr->arg1, &ax);
+  memcell *rv1 = avm_translate(&instr->arg2, &ax);
   memcell *rv2 = avm_translate(&instr->arg2, &bx);
   if (rv1->type == undef_m || rv2->type == undef_m)
     avm_error("undef shouldn't be in lesser than");
@@ -759,6 +795,7 @@ void execute_jlt(instr *instr) {
 
 void execute_jgt(instr *instr) {
   assert(instr->result.type == label_a);
+  // printf("GOTIN_JGT\n");
   memcell *rv1 = avm_translate(&instr->arg1, &ax);
   memcell *rv2 = avm_translate(&instr->arg2, &bx);
   if (rv1->type == undef_m || rv2->type == undef_m)
@@ -772,6 +809,7 @@ void execute_jgt(instr *instr) {
 }
 
 void execute_jmp(instr *in) {
+  // printf("GOTIN_JMP: %d\n\n", in->result.val);
   assert(in->result.type == label_a);
 
   if (!execution_finished)
@@ -1009,7 +1047,7 @@ else if (!strcmp("argument", id))
 
 void execute_pusharg(instr *in) {
   // printf("GOTINEXE_PUSHARG\n\n");
-  // printf("Arg value: %d\n", in->result.val);
+  //  printf("Arg value: %d\n", in->result.val);
   memcell *arg = avm_translate(&in->result, &ax);
   assert(arg);
 
@@ -1017,6 +1055,7 @@ void execute_pusharg(instr *in) {
   // printf("Arg type: %d\n", arg->type);
 
   avm_assign(&avm_stack[top], arg);
+  // printf("GOTOUT\n");
   ++total_actuals;
   avm_dec_top();
 }
@@ -1087,6 +1126,7 @@ int main() {
   avm_initialize();
   decodeBinaryFile();
   top = AVM_STACK_SIZE - 1 - globals_total;
+  printf("\n========= Code Output =========\n\n");
   while (!execution_finished) {
     // printf("top address: %p\n", (void *)(&avm_stack[top]));
     execute_cycle();

@@ -1,43 +1,8 @@
-#include "vm.h"
-
-extern double *const_num_array;
-extern unsigned const_num_size;
-
-extern char **const_string_array;
-extern unsigned const_string_size;
-
-extern char **lib_func_array;
-extern unsigned lib_func_size;
-
-extern userfunc *user_func_array;
-extern unsigned user_func_size;
-
-extern instr *code;
-extern unsigned code_size;
-
-extern unsigned globals_total;
-
-void print_decoded_arrays() {
-  printf("-------------------------------------------\n");
-  for (int i = 0; i < const_num_size; i++) {
-    printf("pos: %d, num: %f\n", i, const_num_array[i]);
-  }
-  for (int i = 0; i < const_string_size; i++) {
-    printf("pos: %d, string: %s\n", i, const_string_array[i]);
-  }
-  for (int i = 0; i < user_func_size; i++) {
-    printf("pos: %d, user: %s, address: %d locals: %d\n", i,
-           user_func_array[i].name, user_func_array[i].address,
-           user_func_array[i].localSize);
-  }
-  for (int i = 0; i < lib_func_size; i++) {
-    printf("pos: %d, lib: %s\n", i, lib_func_array[i]);
-  }
-}
 
 void printInstructions(unsigned n) {
   int i = 0;
-  printf("-------------------------------------------\n");
+  printf("---------------------------------------------------------------------"
+         "----------------\n");
   for (i = 0; i < n; i++) {
     switch (code[i].opcode) {
     case assign_v:
@@ -135,7 +100,7 @@ void printInstructions(unsigned n) {
              code[i].result.val);
       break;
     case funcenter_v:
-      printf("%d | enterfunc | %d %d \n", i, code[i].result.type,
+      printf("%d | enterfunc | %d %d\n", i, code[i].result.type,
              code[i].result.val);
       break;
     case funcexit_v:
@@ -166,69 +131,4 @@ void printInstructions(unsigned n) {
       break;
     }
   }
-}
-
-void decodeBinaryFile() {
-  FILE *f;
-  f = fopen("target_to_bin.abc", "rb");
-  assert(f);
-
-  unsigned int magicnumber;
-  fread(&magicnumber, sizeof(unsigned), 1, f);
-  assert(magicnumber == 340200501);
-
-  fread(&const_string_size, sizeof(unsigned), 1, f);
-  const_string_array = malloc(const_string_size * sizeof(char *));
-  for (unsigned i = 0; i < const_string_size; i++) {
-    unsigned size;
-    fread(&size, sizeof(unsigned), 1, f);
-    const_string_array[i] = malloc(size * sizeof(char));
-    fread((char *)const_string_array[i], sizeof(char), size, f);
-  }
-
-  fread(&const_num_size, sizeof(unsigned), 1, f);
-  const_num_array = malloc(const_num_size * sizeof(double));
-  for (unsigned i = 0; i < const_num_size; i++) {
-    fread(&const_num_array[i], sizeof(double), 1, f);
-  }
-  fread(&user_func_size, sizeof(unsigned), 1, f);
-  user_func_array = malloc(lib_func_size * sizeof(userfunc));
-  for (unsigned i = 0; i < user_func_size; i++) {
-    fread(&(user_func_array[i].address), sizeof(unsigned), 1, f);
-    fread(&(user_func_array[i].localSize), sizeof(unsigned), 1, f);
-    unsigned size;
-    fread(&size, sizeof(unsigned), 1, f);
-    user_func_array[i].name = malloc(size * sizeof(char));
-    fread((char *)user_func_array[i].name, sizeof(char), size, f);
-  }
-
-  fread(&lib_func_size, sizeof(unsigned), 1, f);
-  lib_func_array = malloc(lib_func_size * sizeof(char *));
-  for (unsigned i = 0; i < lib_func_size; i++) {
-    unsigned size;
-    fread(&size, sizeof(unsigned), 1, f);
-    lib_func_array[i] = malloc(size * sizeof(char));
-    fread((char *)lib_func_array[i], sizeof(char), size, f);
-  }
-
-  fread(&code_size, sizeof(unsigned), 1, f);
-  code = malloc(code_size * sizeof(instr));
-  for (unsigned i = 0; i < code_size; i++) {
-    fread(&(code[i].opcode), sizeof(avmop), 1, f);
-    fread(&(code[i].result.type), sizeof(avmarg_t), 1, f);
-    fread(&(code[i].result.val), sizeof(unsigned int), 1, f);
-    fread(&(code[i].arg1.type), sizeof(avmarg_t), 1, f);
-    fread(&(code[i].arg1.val), sizeof(unsigned int), 1, f);
-    fread(&(code[i].arg2.type), sizeof(avmarg_t), 1, f);
-    fread(&(code[i].arg2.val), sizeof(unsigned int), 1, f);
-    fread(&(code[i].line), sizeof(unsigned int), 1, f);
-  }
-  fread(&globals_total, sizeof(unsigned), 1, f);
-
-  print_decoded_arrays();
-
-  printInstructions(code_size);
-
-  // printf("globals: %d\n", globals_total);
-  fclose(f);
 }
