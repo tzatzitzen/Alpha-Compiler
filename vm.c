@@ -304,52 +304,52 @@ void print_stack(unsigned range) {
 memcell *avm_translate(avmarg *arg, memcell *reg) {
 
   // print_stack(10);
-  // printf("type: %d\n", arg->type);
+  printf("type: %d\n", arg->type);
+  printf("pc: %d\n", pc);
 
   switch (arg->type) {
   case global_a: {
-    // printf("Global:\n");
-    //  printf("\n\n");
-    // print_cell(AVM_STACK_SIZE - 1 - arg->val);
+    printf("Global:\n");
+    print_cell(AVM_STACK_SIZE - 1 - arg->val);
     return &avm_stack[AVM_STACK_SIZE - 1 - arg->val];
   }
   case local_a:
-    // printf("local:\n");
-    //  print_cell(topsp - arg->val);
+    printf("local:\n");
+    print_cell(topsp - arg->val);
     print_cell(topsp - arg->val);
     return &avm_stack[topsp - arg->val];
   case formal_a:
-    // printf("formal:\n");
+    printf("formal:\n");
     return &avm_stack[topsp + AVM_STACK_ENV_SIZE + 1 + arg->val];
   case retval_a:
-    // printf("ret\n");
+    printf("ret\n");
     return &retval;
   case number_a:
-    // printf("number:\n");
+    printf("number:\n");
     reg->type = number_m;
     reg->data.num_val = const_get_number(arg->val);
     return reg;
   case string_a:
-    // printf("string:\n");
+    printf("string:\n");
     reg->type = string_m;
     reg->data.str_val = const_get_string(arg->val);
     return reg;
   case bool_a:
-    // printf("bool:\n");
+    printf("bool:\n");
     reg->type = bool_m;
     reg->data.bool_val = arg->val;
     return reg;
   case nil_a:
-    // printf("nil:\n");
+    printf("nil:\n");
     reg->type = nil_m;
     return reg;
   case userfunc_a:
-    // printf("user:\n");
+    printf("user:\n");
     reg->type = userfunc_m;
     reg->data.userfunc_val = arg->val;
     return reg;
   case libfunc_a:
-    // printf("lib:\n");
+    printf("lib:\n");
     reg->type = libfunc_m;
     reg->data.libfunc_val = libfuncs_get_used(arg->val);
     return reg;
@@ -390,11 +390,11 @@ void print_pointers(memcell *lv) {
 
 unsigned count = 0;
 void execute_assign(instr *in) {
-  // printf("Before Assign:\n");
+  printf("Before Assign:\n");
   //  printf("\n---------GOTIN_ASSING: %d---------\n", ++count);
   memcell *lv = avm_translate(&in->result, (memcell *)0);
   memcell *rv = avm_translate(&in->arg1, &ax);
-  // print_pointers(lv);
+  print_pointers(lv);
   assert(lv && (&avm_stack[AVM_STACK_SIZE - 1] >= lv && lv > &avm_stack[top]) ||
          lv == &retval);
   avm_assign(lv, rv);

@@ -60,7 +60,7 @@ void printInstructions(unsigned n) {
       } else if (code[i].arg1.type == retval_a) {
         printf("%d | assign | %d %d | %d\n", i, code[i].result.type,
                code[i].result.val, code[i].arg1.type);
-      } else { /*2nd assign*/
+      } else {
         if (code[i].result.type == retval_a) {
           printf("%d | assign | %d | %d %d\n", i, code[i].result.type,
                  code[i].arg1.type, code[i].arg1.val);

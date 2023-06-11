@@ -1,5 +1,4 @@
 #include "symtable.h"
-#include <string.h>
 
 SymbolTable_T symtable;
 
@@ -90,7 +89,6 @@ void SymbolTable_insert(const char *name, int scope, int line, Type type,
   }
   Entry_T current, new_entry;
 
-  /* create new element */
   new_entry = Entry_new(name, scope, line, type, scopespace, offset);
   if (type == ST_USERFUNC) {
     symtable->scope_is_func[scope + 1] = true;

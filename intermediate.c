@@ -127,11 +127,15 @@ unsigned int formalArgOffset = 0;
 unsigned int scopespaceCounter = 1;
 
 scopespace_t currScopespace() {
+  printf("scopespace: %d<----\n\n", scopespaceCounter);
   if (scopespaceCounter == 1) {
+    printf("GOTIN_GLOBAL\n\n");
     return programvar;
   } else if (scopespaceCounter % 2 == 0) {
+    printf("GOTIN_FORMAL!!!!----\n\n\n");
     return formalarg;
   } else {
+    printf("GOTIN_LOCAL!!!!----\n\n\n");
     return functionlocal;
   }
 }
@@ -386,10 +390,8 @@ void push(struct stack *x, unsigned int y) {
     printf("Error, stackoverflow, cannot push element, stack is full\n");
     return;
   }
-  printf("top:%d \n\n", x->top);
   x->top++;
   x->data[x->top] = y;
-  printf("pushed: %d\n\n", y);
 }
 
 int pop(struct stack *x) {
@@ -399,7 +401,6 @@ int pop(struct stack *x) {
   }
   int y = x->data[x->top];
   x->top--;
-  printf("poped: %d\n\n", y);
   return y;
 }
 

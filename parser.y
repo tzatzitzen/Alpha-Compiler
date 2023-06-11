@@ -521,9 +521,8 @@ funcprefix: FUNCTION funcname{
 				resetFormalArgOffset();
 				}
 
-funcargs:		LEFT_PARENTHESIS {curr_scope++;} idlist RIGHT_PARENTHESIS {scope_minus(); parent_scopes[curr_scope + 1] = FUNCTION_; }{
-														enterScopespace();
-														resetFunctionLocalOffset();
+funcargs:		LEFT_PARENTHESIS {curr_scope++; } idlist RIGHT_PARENTHESIS {scope_minus(); parent_scopes[curr_scope + 1] = FUNCTION_; }{
+					enterScopespace();							       resetFunctionLocalOffset();
 														}
 
 funcbody:	block{
@@ -550,8 +549,8 @@ const:			INTEGER { $$ = newexpr_constNum($1->intVal); }
 				| TRUE {$$ = newexpr_constBool(1);}
 				| FALSE{$$ = newexpr_constBool(0);}
 
-idlist:			idlist COMMA ID { insertArgument($3);}
-				| ID { insertArgument($1);}
+idlist:			idlist COMMA ID {inCurrScopespaceOffset(); insertArgument($3);}
+				| ID {printf("curr: %d\n", currScopespace()); insertArgument($1);}
 				| {}
 
 ifstmt:			ifprefix stmt {
@@ -806,6 +805,7 @@ void checkLocal(const lex_token* token) {
 int yyerror(char* yaccProvidedMessage) {
     fprintf(stderr,"%s: at line %d, before token: %s\n",yaccProvidedMessage,yylineno,yytext);
     fprintf(stderr,"INPUT NOT VALID\n");
+    exit(1);
 }
 
 void init() {

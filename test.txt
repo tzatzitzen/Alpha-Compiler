@@ -14,7 +14,17 @@
 	3.000 6.000 6.000 9.000 0.000
 */
 
+
 x = 5;
-b = "DENANTEXOALLO";
-function g(c) {print(b, "\n", "\n");}
-g(1);
+if(x == 5 ) {
+	y = 3;
+}
+
+
+
+/*
+x =5;
+function f(c) { c = c + 1;print(c, "------------\n");}
+
+f(x);
+	*/
