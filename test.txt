@@ -1,24 +1,8 @@
-/*
-    Test file for the final phase of HY-340: Languages & Compilers
-    Computer science dpt, University of Crete, Greece
-
-    Expected Output:
-	3.000 6.000 9.000 54.000
-	18.000 9.000
-	54.000 54.000 54.000 54.000
-	0.000 0.000
-	-9.000
-	20.000
-	16.500
-	0.000
-	3.000 6.000 6.000 9.000 0.000
-*/
-
-
 x = 5;
-if(x == 5 ) {
-	y = 3;
-}
+if(x > 4 ) {
+	print(x, "\n");
+} else {
+    print(10, "\n");}
 
 
 
